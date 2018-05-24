@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Humbug\PhpScoper\PhpParser\NodeVisitor\UseStmt;
 
 use Humbug\PhpScoper\PhpParser\NodeVisitor\AppendParentNode;
+use Humbug\PhpScoper\PhpParser\NodeVisitor\Collection\WhiteListedNamespaceCollection;
 use Humbug\PhpScoper\Reflector;
 use PhpParser\Node;
 use PhpParser\Node\Name;
@@ -31,11 +32,13 @@ final class UseStmtPrefixer extends NodeVisitorAbstract
 {
     private $prefix;
     private $reflector;
+    private $whiteListedNamespaces;
 
-    public function __construct(string $prefix, Reflector $reflector)
+    public function __construct(string $prefix, Reflector $reflector, WhiteListedNamespaceCollection $whiteListedNamespaces)
     {
         $this->prefix = $prefix;
         $this->reflector = $reflector;
+        $this->whiteListedNamespaces = $whiteListedNamespaces;
     }
 
     /**
@@ -65,6 +68,9 @@ final class UseStmtPrefixer extends NodeVisitorAbstract
 
         if (Use_::TYPE_CONSTANT === $useType) {
             return false === $this->reflector->isConstantInternal((string) $use->name);
+        }
+        if ($this->whiteListedNamespaces->isWhiteListed($use->name->toString())) {
+            return false;
         }
 
         return Use_::TYPE_NORMAL !== $useType || false === $this->reflector->isClassInternal((string) $use->name);

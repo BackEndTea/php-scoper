@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Humbug\PhpScoper\PhpParser\NodeVisitor;
 
+use Humbug\PhpScoper\PhpParser\NodeVisitor\Collection\WhiteListedNamespaceCollection;
 use Humbug\PhpScoper\PhpParser\NodeVisitor\Resolver\FullyQualifiedNameResolver;
 use Humbug\PhpScoper\Reflector;
 use PhpParser\Node;
@@ -60,20 +61,17 @@ final class NameStmtPrefixer extends NodeVisitorAbstract
     private $prefix;
     private $nameResolver;
     private $reflector;
-
-    /**
-     * @param string                     $prefix
-     * @param FullyQualifiedNameResolver $nameResolver
-     * @param Reflector                  $reflector
-     */
+    private $whiteListedNamespaces;
     public function __construct(
         string $prefix,
         FullyQualifiedNameResolver $nameResolver,
-        Reflector $reflector
+        Reflector $reflector,
+        WhiteListedNamespaceCollection $whiteListedNamespaces
     ) {
         $this->prefix = $prefix;
         $this->nameResolver = $nameResolver;
         $this->reflector = $reflector;
+        $this->whiteListedNamespaces = $whiteListedNamespaces;
     }
 
     /**
@@ -152,6 +150,9 @@ final class NameStmtPrefixer extends NodeVisitorAbstract
             if ($this->reflector->isClassInternal($resolvedName->toString())) {
                 return $resolvedName;
             }
+        }
+        if ($this->whiteListedNamespaces->isWhiteListed($resolvedName->toString())) {
+            return $resolvedName;
         }
 
         // Constants have a fallback autoloading so we cannot prefix them when the name is ambiguous

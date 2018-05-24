@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Humbug\PhpScoper\PhpParser\NodeVisitor;
 
 use Humbug\PhpScoper\PhpParser\NodeVisitor\Collection\NamespaceStmtCollection;
+use Humbug\PhpScoper\PhpParser\NodeVisitor\Collection\WhiteListedNamespaceCollection;
 use PhpParser\Node;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_;
@@ -42,11 +43,16 @@ final class NamespaceStmtPrefixer extends NodeVisitorAbstract
 {
     private $prefix;
     private $namespaceStatements;
+    private $whiteListedNamespaces;
 
-    public function __construct(string $prefix, NamespaceStmtCollection $namespaceStatements)
-    {
+    public function __construct(
+        string $prefix,
+        NamespaceStmtCollection $namespaceStatements,
+        WhiteListedNamespaceCollection $whiteListedNamespaces
+    ) {
         $this->prefix = $prefix;
         $this->namespaceStatements = $namespaceStatements;
+        $this->whiteListedNamespaces = $whiteListedNamespaces;
     }
 
     /**
@@ -64,7 +70,7 @@ final class NamespaceStmtPrefixer extends NodeVisitorAbstract
     {
         $originalNamespace = $namespace;
 
-        if ($this->shouldPrefixStmt($namespace)) {
+        if ($this->shouldPrefixStmt($namespace) && !$this->whiteListedNamespaces->isWhiteListed((string)$namespace->name)) {
             $originalNamespace = clone_node($namespace);
 
             $namespace->name = Name::concat($this->prefix, $namespace->name);

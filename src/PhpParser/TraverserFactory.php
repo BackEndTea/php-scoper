@@ -16,6 +16,7 @@ namespace Humbug\PhpScoper\PhpParser;
 
 use Humbug\PhpScoper\PhpParser\NodeVisitor\Collection\NamespaceStmtCollection;
 use Humbug\PhpScoper\PhpParser\NodeVisitor\Collection\UseStmtCollection;
+use Humbug\PhpScoper\PhpParser\NodeVisitor\Collection\WhiteListedNamespaceCollection;
 use Humbug\PhpScoper\PhpParser\NodeVisitor\Resolver\FullyQualifiedNameResolver;
 use Humbug\PhpScoper\Reflector;
 use PhpParser\NodeTraverserInterface;
@@ -38,20 +39,21 @@ class TraverserFactory
 
         $namespaceStatements = new NamespaceStmtCollection();
         $useStatements = new UseStmtCollection();
+        $whitelist = new WhiteListedNamespaceCollection($whitelist);
 
         $nameResolver = new FullyQualifiedNameResolver($namespaceStatements, $useStatements);
 
         $traverser->addVisitor(new NodeVisitor\AppendParentNode());
 
-        $traverser->addVisitor(new NodeVisitor\NamespaceStmtPrefixer($prefix, $namespaceStatements));
+        $traverser->addVisitor(new NodeVisitor\NamespaceStmtPrefixer($prefix, $namespaceStatements, $whitelist));
 
         $traverser->addVisitor(new NodeVisitor\UseStmt\UseStmtCollector($namespaceStatements, $useStatements));
-        $traverser->addVisitor(new NodeVisitor\UseStmt\UseStmtPrefixer($prefix, $this->reflector));
+        $traverser->addVisitor(new NodeVisitor\UseStmt\UseStmtPrefixer($prefix, $this->reflector, $whitelist));
 
-        $traverser->addVisitor(new NodeVisitor\NameStmtPrefixer($prefix, $nameResolver, $this->reflector));
-        $traverser->addVisitor(new NodeVisitor\StringScalarPrefixer($prefix, $this->reflector));
+        $traverser->addVisitor(new NodeVisitor\NameStmtPrefixer($prefix, $nameResolver, $this->reflector, $whitelist));
+        $traverser->addVisitor(new NodeVisitor\StringScalarPrefixer($prefix, $this->reflector, $whitelist));
 
-        $traverser->addVisitor(new NodeVisitor\WhitelistedClassAppender($whitelist));
+        //$traverser->addVisitor(new NodeVisitor\WhitelistedClassAppender($whitelist));
 
         return $traverser;
     }

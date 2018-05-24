@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Humbug\PhpScoper\PhpParser\NodeVisitor;
 
+use Humbug\PhpScoper\PhpParser\NodeVisitor\Collection\WhiteListedNamespaceCollection;
 use Humbug\PhpScoper\Reflector;
 use PhpParser\Node;
 use PhpParser\Node\Arg;
@@ -51,11 +52,13 @@ final class StringScalarPrefixer extends NodeVisitorAbstract
 {
     private $prefix;
     private $reflector;
+    private $whiteListedNamespaces;
 
-    public function __construct(string $prefix, Reflector $reflector)
+    public function __construct(string $prefix, Reflector $reflector, WhiteListedNamespaceCollection $whiteListedNamespaces)
     {
         $this->prefix = $prefix;
         $this->reflector = $reflector;
+        $this->whiteListedNamespaces = $whiteListedNamespaces;
     }
 
     /**
@@ -105,6 +108,9 @@ final class StringScalarPrefixer extends NodeVisitorAbstract
             preg_replace('/^\\\\(.+)$/', '$1', $string->value),
             $string->getAttributes()
         );
+        if ($this->whiteListedNamespaces->isWhiteListed($stringName->toString())) {
+            return $string;
+        }
 
         // Skip if is already prefixed
         if ($this->prefix === $stringName->getFirst()) {
